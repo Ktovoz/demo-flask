@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
+from flask_cors import CORS
 
 from config import config
 
@@ -11,16 +12,21 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
 csrf = CSRFProtect()
+cors = CORS()
 
 def create_app(config_name='default'):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
+    
+    # 配置CORS
+    app.config['CORS_HEADERS'] = 'Content-Type'
     
     # 初始化扩展
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
     csrf.init_app(app)
+    cors.init_app(app, resources={r"/*": {"origins": "*"}})
     
     # 设置登录视图
     login_manager.login_view = 'auth.login'

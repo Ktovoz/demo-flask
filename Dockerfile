@@ -39,8 +39,13 @@ COPY . .
 RUN chown -R appuser:appuser /app
 USER appuser
 
+# 设置环境变量
+ENV FLASK_APP=run.py
+ENV FLASK_ENV=production
+ENV WORKERS=4
+
 # 暴露端口
 EXPOSE 5000
 
 # 启动命令
-CMD ["python", "run.py"] 
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--access-logfile", "-", "--error-logfile", "-", "run:app"] 
