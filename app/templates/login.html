@@ -11,7 +11,7 @@
         <strong>默认管理员</strong><br>
         用户名：admin ／ 密码：admin123
         <br>
-        <button type="button" class="btn btn-link p-0 align-baseline" onclick="prefillDemo()">一键填充演示账号</button>
+        <button type="button" class="btn btn-link p-0 align-baseline" onclick="prefillDemo()">一键填充管理员账号</button>
     </div>
 
     <div class="mb-3">
@@ -59,8 +59,8 @@
 {{ super() }}
 <script>
 function prefillDemo() {
-    document.getElementById('username').value = 'demo';
-    document.getElementById('password').value = 'demo1234';
+    document.getElementById('username').value = 'admin';
+    document.getElementById('password').value = 'admin123';
 }
 </script>
 {% endblock %}

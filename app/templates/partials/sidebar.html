@@ -18,16 +18,31 @@
     </div>
 </div>
 
-<nav class="sidebar-nav d-flex flex-column gap-2" id="sidebarNav">
-    <button type="button" class="sidebar-link active" data-view="users">
-        <i class="bi bi-people-fill"></i>
-        <span>用户列表</span>
-    </button>
-    <button type="button" class="sidebar-link" data-view="groups">
-        <i class="bi bi-collection"></i>
-        <span>用户组管理</span>
-    </button>
-</nav>
+<div class="sidebar-section">
+    <div class="section-title text-uppercase text-white-50 small">导航</div>
+    <nav class="sidebar-nav d-flex flex-column gap-2" id="sidebarNav">
+        <button type="button" class="sidebar-link active" data-view="users">
+            <i class="bi bi-people-fill"></i>
+            <span>用户列表</span>
+        </button>
+        <button type="button" class="sidebar-link" data-view="groups">
+            <i class="bi bi-collection"></i>
+            <span>用户组管理</span>
+        </button>
+    </nav>
+</div>
+
+<div class="sidebar-section mt-4">
+    <div class="section-title text-uppercase text-white-50 small">常用操作</div>
+    <div class="d-grid gap-2">
+        <button type="button" class="btn btn-outline-light btn-sm" onclick="Dashboard.showView('users')">
+            <i class="bi bi-person-lines-fill me-1"></i>管理用户
+        </button>
+        <button type="button" class="btn btn-outline-light btn-sm" onclick="Dashboard.showView('groups')">
+            <i class="bi bi-diagram-3 me-1"></i>查看用户组
+        </button>
+    </div>
+</div>
 
 <style>
 .sidebar-avatar {
@@ -36,6 +51,15 @@
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.16);
     font-size: 1.1rem;
+}
+
+.sidebar-section + .sidebar-section {
+    margin-top: 2rem;
+}
+
+.section-title {
+    letter-spacing: 0.08em;
+    margin-bottom: 0.75rem;
 }
 
 .sidebar-nav .sidebar-link {

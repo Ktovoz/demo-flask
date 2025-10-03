@@ -1,23 +1,62 @@
-﻿{% extends "layouts/app_base.html" %}
+{% extends "layouts/app_base.html" %}
 
 {% block title %}用户管理后台{% endblock %}
 
 {% block styles %}
 {{ super() }}
 <style>
-    .content-card {
-        background: #ffffff;
-        border-radius: 16px;
-        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
-        padding: 1.75rem;
-        margin-bottom: 2rem;
+    .stats-chip {
+        min-width: 140px;
+        padding: 0.75rem 1rem;
+        border-radius: 14px;
+        background: rgba(79, 70, 229, 0.08);
+        border: 1px solid rgba(79, 70, 229, 0.12);
     }
-    .badge { letter-spacing: 0.5px; }
+    .stats-chip.emerald {
+        background: rgba(22, 163, 74, 0.08);
+        border-color: rgba(22, 163, 74, 0.12);
+    }
+    .stats-chip .label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+    .stats-chip .value {
+        font-weight: 600;
+        font-size: 1.25rem;
+        color: var(--text-primary);
+    }
 </style>
 {% endblock %}
 
 {% block sidebar %}
     {% include "partials/sidebar.html" with context %}
+{% endblock %}
+
+{% block app_header %}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+        <h1 class="h3 mb-1 text-gradient">用户管理后台</h1>
+        <p class="text-muted mb-0">欢迎回来，{{ current_user.username }}。在这里查看成员、维护权限或快速创建账号。</p>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <div class="stats-chip">
+            <div class="label">当前角色</div>
+            <div class="d-flex align-items-center gap-2 value">
+                <i class="bi bi-shield-check text-primary"></i>
+                <span>{{ current_user.group_name|default("未分配") }}</span>
+            </div>
+        </div>
+        <div class="stats-chip emerald">
+            <div class="label">我的 IP</div>
+            <div class="value">{{ request.remote_addr }}</div>
+        </div>
+        {% if current_user.has_permission('add_user') %}
+        <button type="button" class="btn btn-brand" onclick="Dashboard.openCreateUser()">
+            <i class="bi bi-plus-lg me-1"></i>新建用户
+        </button>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}
 
 {% block app_content %}
@@ -32,17 +71,19 @@
 
 {% block scripts %}
 {{ super() }}
-    <script id="initialData" type="application/json">
-        {{ {
-            'users': users_data,
-            'groups': groups_data,
-            'permissions': {
-                'add': current_user.has_permission('add_user'),
-                'edit': current_user.has_permission('edit_user'),
-                'delete': current_user.has_permission('delete_user'),
-            }
-        } | tojson }}
-    </script>
-    {% include "partials/dashboard_scripts.html" %}
-    <script>Dashboard.init();</script>
+<script id="initialData" type="application/json">
+    {{ {
+        'users': users_data,
+        'groups': groups_data,
+        'permissions': {
+            'add': current_user.has_permission('add_user'),
+            'edit': current_user.has_permission('edit_user'),
+            'delete': current_user.has_permission('delete_user'),
+        }
+    } | tojson }}
+</script>
+{% include "partials/dashboard_scripts.html" %}
+<script>
+    Dashboard.init();
+</script>
 {% endblock %}
