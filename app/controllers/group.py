@@ -3,7 +3,6 @@ from flask_login import login_required, current_user
 from app.models.group import Group
 from app.models.user import User
 from app.utils.decorators import permission_required
-from app import db
 
 group_bp = Blueprint('group', __name__)
 

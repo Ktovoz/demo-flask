@@ -1,8 +1,8 @@
-from typing import List, Tuple
+﻿from typing import List, Tuple
 
 from loguru import logger
 
-from app import db
+from app.extensions import db
 from app.models.group import Group
 from app.models.user import User
 
@@ -20,7 +20,7 @@ DEFAULT_USERS = [
 
 
 def ensure_seed_data(commit: bool = True) -> Tuple[List[str], List[str]]:
-    """确保默认用户组与测试账号存在."""
+    """Ensure default groups and demo accounts exist."""
     created_groups: List[str] = []
     created_users: List[str] = []
 

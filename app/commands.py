@@ -2,7 +2,7 @@ import click
 from flask.cli import with_appcontext
 from loguru import logger
 
-from app import db
+from app.extensions import db
 from app.utils.bootstrap import ensure_seed_data
 
 
