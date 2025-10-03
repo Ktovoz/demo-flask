@@ -1,157 +1,98 @@
-# 🚀 Flask 用户管理系统 ✨
+﻿# Flask 用户管理系统
 
-[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
-[![Flask Version](https://img.shields.io/badge/flask-3.0-blue.svg)](https://flask.palletsprojects.com/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/ktovoz/demo-flask/docker-image.yml)](https://github.com/ktovoz/demo-flask/actions)
+一套基于 Flask 3 的演示级用户管理平台，包含账户认证、权限分组、可视化后台与自动化部署示例。项目已经模块化拆分，适合作为中小型管理后台或团队内部工具的脚手架。
 
+## ✨ 功能亮点
+- 登录 / 注册 / 退出与记住我能力，基于 Flask-Login 管理会话
+- 演示账号 (demo/demo1234) 与初始化种子脚本，便于快速体验
+- 角色分组（超级管理员 / 管理员 / 普通用户）与简单权限判定
+- 后台仪表盘：用户 CRUD、重置密码、管理成员归属
+- Loguru 驱动的结构化日志输出，附加轮转与标准 logging 接入
+- Docker 与 GitHub Actions 示例，方便扩展部署
 
-✨ 这是一个基于Flask的用户管理系统，提供完整的用户认证和权限管理解决方案。
-
-## 📌 目录
-- [✨ 功能特性](#-功能特性)
-- [🛠️ 技术栈](#️-技术栈)
-- [⚡ 快速开始](#-快速开始)
-- [📚 API文档](#-api文档)
-- [🏗️ 项目结构](#️-项目结构)
-- [🤝 贡献指南](#-贡献指南)
-- [📜 许可证](#-许可证)
-
-## ✨ 功能特性
-
-<details>
-<summary><strong>🔐 用户认证</strong></summary>
-
-- ✅ 📧 用户注册：支持邮箱验证和安全密码存储
-- ✅ 🔑 登录/注销：基于Flask-Login的会话管理
-</details>
-
-<details>
-<summary><strong>👥 用户管理</strong></summary>
-
-- ✅ 🛠️ CRUD操作：创建、读取、更新和删除用户
-- ✅ 👨‍💻 用户分组：超级管理员、管理员和普通用户三级权限
-</details>
-
-## 🛠️ 技术栈
-
-| 技术 | 用途 |
+## 🧱 技术栈
+| 组件 | 说明 |
 |------|------|
-| 🐍 Python 3.x | 后端语言 |
-| 🏗️ Flask 3.0 | Web框架 |
-| 🗃️ SQLAlchemy 2.0 | ORM |
-| 🔑 Flask-Login | 用户会话管理 |
-| 📝 Flask-WTF | 表单处理 |
+| Python 3.10+ | 运行环境 |
+| Flask 3.0 | Web 框架 & 蓝图体系 |
+| SQLAlchemy 2.x / Flask-Migrate | ORM 与数据库迁移 |
+| Flask-Login / Flask-WTF | 认证与表单校验 |
+| Loguru | 结构化日志与轮转输出 |
+| Bootstrap 5 | 响应式前端 UI |
 
-## 快速开始
-
-```bash
-# 克隆仓库
+## 🚀 快速开始
+`ash
+# 克隆项目
 git clone https://github.com/your-repo/demo-flask.git
 cd demo-flask
 
-# 创建虚拟环境
-python -m venv venv
+# 创建并激活虚拟环境
+python -m venv .venv
 # Windows
-venv\Scripts\activate
-# Linux/Mac
-source venv/bin/activate
+.venv\Scripts\activate
+# macOS / Linux
+source .venv/bin/activate
 
 # 安装依赖
 pip install -r requirements.txt
 
-# 配置环境
-cp .env.example .env
+# 初始化数据库并写入种子账号
+flask --app run.py init-db
 
-# 初始化数据库
-flask db init
-flask db migrate
-flask db upgrade
+# 启动开发服务器
+flask --app run.py --debug run
+`
+访问 http://127.0.0.1:5000，使用 demo / demo1234 体验后台。
 
-# 启动应用
-flask run
+## 🗂️ 项目结构
+`
+app/
+├── __init__.py            # 应用工厂，注册扩展/蓝图/命令
+├── extensions.py          # db、login_manager、migrate 等集中声明
+├── commands.py            # Flask CLI：数据库初始化
+├── controllers/           # 蓝图 (auth / user / group / main)
+├── services/              # 业务服务层 (auth_service, user_service)
+├── forms/                 # WTForms 定义
+├── models/                # SQLAlchemy 模型
+├── templates/
+│   ├── layouts/           # 基础与后台布局 (base, auth_base, app_base)
+│   ├── partials/          # 侧边栏、数据表、模态框、脚本等片段
+│   └── errors/            # 403 / 404 / 500 页面
+├── utils/                 # 日志配置、数据种子等工具
+└── ...
+`
 
-# 使用Gunicorn生产环境部署
-gunicorn -w 4 -b 0.0.0.0:5000 "run:app"
-```
+## 🧩 架构要点
+- **扩展分离**：pp/extensions.py 集中实例化并在工厂中初始化，避免循环依赖。
+- **服务层**：pp/services/ 处理登录、用户 CRUD、密码与分组变更，控制器仅负责请求解析与响应。
+- **日志统一**：pp/utils/logging.py 通过 Loguru 将 stdout 与文件日志接管，并桥接标准库 logging。
+- **模板拆分**：布局 (layouts/) + 片段 (partials/) 组合成后台页面，便于后续扩展页面或替换 UI。
+- **数据引导**：ensure_seed_data 会在 CLI 与应用启动时运行，确保基础用户组与 demo 账号存在。
 
-## API文档
+## 🧪 开发与测试
+`ash
+# 运行单元 / 集成测试（示例）
+pytest
 
-访问 `/api/docs` 查看Swagger API文档
+# 数据库迁移
+flask --app run.py db migrate -m "message"
+flask --app run.py db upgrade
+`
+> 建议为新增功能补充 Pytest 用例（默认使用内存 SQLite 与禁用 CSRF 的 TestingConfig）。
 
-### API端点
+## 📝 日志
+- 默认输出到标准输出与 instance/logs/app.log
+- 可通过环境变量自定义:
+  - LOG_LEVEL（默认 INFO）
+  - LOG_ROTATION / LOG_RETENTION
+  - LOG_PATH 或 LOG_DIR
+  - LOG_BACKTRACE / LOG_DIAGNOSE
 
-#### 用户认证
-| 方法 | 端点 | 描述 |
-|------|------|------|
-| POST | `/api/auth/register` | 用户注册 |
-| POST | `/api/auth/login` | 用户登录 |
-| POST | `/api/auth/logout` | 用户注销 |
-| POST | `/api/auth/reset-password` | 密码重置 |
+## 🤝 贡献指南
+1. Fork & 新建分支，遵循 Conventional Commits（如 eat(user): ...）
+2. 保持 lack / lake8 风格（PEP 8 / 4 空格缩进）
+3. 增补测试、更新文档或截图，并在 PR 中描述验证步骤
+4. 避免提交本地数据库、__pycache__、IDE 配置等构建产物
 
-#### 用户管理
-| 方法 | 端点 | 描述 |
-|------|------|------|
-| GET | `/api/users` | 获取用户列表 |
-| POST | `/api/users` | 创建新用户 |
-| GET | `/api/users/{id}` | 获取单个用户信息 |
-| PUT | `/api/users/{id}` | 更新用户信息 |
-| DELETE | `/api/users/{id}` | 删除用户 |
-
-#### 用户组管理
-| 方法 | 端点 | 描述 |
-|------|------|------|
-| GET | `/api/groups` | 获取用户组列表 |
-| POST | `/api/groups` | 创建新用户组 |
-| PUT | `/api/groups/{id}` | 更新用户组信息 |
-| DELETE | `/api/groups/{id}` | 删除用户组 |
-
-## 项目结构
-
-```
-.
-├── .github/
-│   └── workflows/
-│       └── docker-image.yml
-├── app/
-│   ├── __init__.py
-│   ├── commands.py
-│   ├── controllers/
-│   │   ├── auth.py
-│   │   ├── group.py
-│   │   ├── main.py
-│   │   └── user.py
-│   ├── forms/
-│   │   └── auth.py
-│   ├── models/
-│   │   ├── group.py
-│   │   └── user.py
-│   ├── templates/
-│   │   ├── base.html
-│   │   ├── errors/
-│   │   ├── index.html
-│   │   ├── login.html
-│   │   └── register.html
-│   └── utils/
-│       └── decorators.py
-├── config.py
-├── Dockerfile
-├── instance/
-│   └── app.db
-├── migrations/
-│   └── env.py
-├── requirements.txt
-├── run.py
-└── README.md
-```
-
-## 贡献指南
-
-欢迎提交Pull Request。请确保：
-1. 代码符合PEP8规范
-2. 添加适当的测试
-3. 更新相关文档
-
-## 许可证
-
-MIT License
+## 📄 许可
+本项目基于 MIT License 发布。
