@@ -21,6 +21,7 @@
 {% endblock %}
 
 {% block app_content %}
+    <div id="alertContainer"></div>
     <input type="hidden" id="csrfToken" value="{{ csrf_token() }}">
     <input type="hidden" id="currentUserId" value="{{ current_user.id }}">
 
@@ -31,6 +32,17 @@
 
 {% block scripts %}
 {{ super() }}
+    <script id="initialData" type="application/json">
+        {{ {
+            'users': users_data,
+            'groups': groups_data,
+            'permissions': {
+                'add': current_user.has_permission('add_user'),
+                'edit': current_user.has_permission('edit_user'),
+                'delete': current_user.has_permission('delete_user'),
+            }
+        } | tojson }}
+    </script>
     {% include "partials/dashboard_scripts.html" %}
-    <script>Dashboard.showView('users');</script>
+    <script>Dashboard.init();</script>
 {% endblock %}

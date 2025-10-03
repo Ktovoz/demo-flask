@@ -1,4 +1,4 @@
-﻿{% extends "layouts/auth_base.html" %}
+{% extends "layouts/auth_base.html" %}
 
 {% block title %}登录 - 用户管理系统{% endblock %}
 
@@ -8,18 +8,19 @@
     <h1 class="h4 mb-4 text-primary fw-semibold text-center">Flask 演示系统</h1>
 
     <div class="alert demo-credentials mb-4" role="alert">
-        <strong>演示账号</strong><br>
-        用户名：demo<br>
-        密码：demo1234
+        <strong>默认管理员</strong><br>
+        用户名：admin ／ 密码：admin123
+        <br>
+        <button type="button" class="btn btn-link p-0 align-baseline" onclick="prefillDemo()">一键填充演示账号</button>
     </div>
 
     <div class="mb-3">
         <label class="form-label">用户名</label>
-        <input type="text" class="form-control" name="username" placeholder="请输入用户名" required>
+        <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户名" required>
     </div>
     <div class="mb-3">
         <label class="form-label">密码</label>
-        <input type="password" class="form-control" name="password" placeholder="请输入密码" required>
+        <input type="password" class="form-control" id="password" name="password" placeholder="请输入密码" required>
     </div>
     <div class="form-check mb-4">
         <input class="form-check-input" type="checkbox" value="remember-me" id="rememberMe" name="remember_me">
@@ -52,4 +53,14 @@
         color: #3f51b5;
     }
 </style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function prefillDemo() {
+    document.getElementById('username').value = 'demo';
+    document.getElementById('password').value = 'demo1234';
+}
+</script>
 {% endblock %}

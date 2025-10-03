@@ -15,7 +15,7 @@ DEFAULT_GROUPS = [
 
 DEFAULT_USERS = [
     ('admin', 'admin@example.com', 'admin123', Group.SUPER_ADMIN),
-    ('demo', 'demo@example.com', 'demo1234', Group.USER),
+    ('demo', 'demo@example.com', 'demo1234', Group.SUPER_ADMIN),
 ]
 
 
@@ -23,6 +23,7 @@ def ensure_seed_data(commit: bool = True) -> Tuple[List[str], List[str]]:
     """Ensure default groups and demo accounts exist."""
     created_groups: List[str] = []
     created_users: List[str] = []
+    updated_users: List[str] = []
 
     for name, description in DEFAULT_GROUPS:
         if not Group.query.filter_by(name=name).first():
@@ -36,23 +37,35 @@ def ensure_seed_data(commit: bool = True) -> Tuple[List[str], List[str]]:
     group_lookup = {group.name: group for group in Group.query.all()}
 
     for username, email, password, group_name in DEFAULT_USERS:
-        if not User.query.filter_by(username=username).first():
-            user = User(
-                username=username,
-                email=email,
-                password=password,
-                is_active=True,
-            )
-            group = group_lookup.get(group_name)
-            if group:
-                user.group = group
-            db.session.add(user)
-            created_users.append(username)
+        existing = User.query.filter_by(username=username).first()
+        target_group = group_lookup.get(group_name)
+
+        if existing:
+            if target_group and existing.group != target_group:
+                existing.group = target_group
+                updated_users.append(username)
+            if existing.is_active is False:
+                existing.is_active = True
+                updated_users.append(username)
+            continue
+
+        user = User(
+            username=username,
+            email=email,
+            password=password,
+            is_active=True,
+        )
+        if target_group:
+            user.group = target_group
+        db.session.add(user)
+        created_users.append(username)
 
     if created_users:
         logger.info('创建默认账号: {}', ', '.join(created_users))
+    if updated_users:
+        logger.info('更新默认账号: {}', ', '.join(sorted(set(updated_users))))
 
-    if (created_groups or created_users) and commit:
+    if (created_groups or created_users or updated_users) and commit:
         db.session.commit()
         logger.success('默认数据已写入数据库')
     elif commit:

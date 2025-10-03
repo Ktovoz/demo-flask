@@ -1,10 +1,11 @@
-﻿from flask import Flask, render_template
+﻿from flask import Flask, render_template, g
 from loguru import logger
 
 from config import config
 from app.extensions import csrf, cors, db, login_manager, migrate
 from app.utils.bootstrap import ensure_seed_data
 from app.utils.logging import configure_logging
+from app.utils.request_logger import log_request_info
 
 
 def create_app(config_name: str = 'default') -> Flask:
@@ -16,6 +17,7 @@ def create_app(config_name: str = 'default') -> Flask:
     register_blueprints(app)
     register_error_handlers(app)
     register_cli(app)
+    register_request_hooks(app)
 
     with app.app_context():
         db.create_all()
@@ -70,3 +72,9 @@ def register_error_handlers(app: Flask) -> None:
     def internal_server_error(error):
         logger.exception('服务器内部错误')
         return render_template('errors/500.html'), 500
+
+
+def register_request_hooks(app: Flask) -> None:
+    @app.before_request
+    def before_request():
+        log_request_info()

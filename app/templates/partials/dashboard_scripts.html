@@ -1,181 +1,326 @@
-﻿<script>
+<script>
 const Dashboard = (() => {
-    const csrfToken = () => document.getElementById('csrfToken').value;
+    let state = { users: [], groups: [], permissions: {} };
+    let modals = {};
 
-    const endpoints = {
-        users: '/users',
-        groups: '/groups'
-    };
-
-    const dom = {
-        userModal: () => bootstrap.Modal.getOrCreateInstance(document.getElementById('userModal')),
-        passwordModal: () => bootstrap.Modal.getOrCreateInstance(document.getElementById('passwordModal')),
-        groupMembersModal: () => bootstrap.Modal.getOrCreateInstance(document.getElementById('groupMembersModal')),
+    const elements = {
+        data: () => document.getElementById('initialData'),
+        csrf: () => document.getElementById('csrfToken'),
+        sidebar: () => document.getElementById('sidebarNav'),
+        userTableBody: () => document.getElementById('userTableBody'),
+        userEmpty: () => document.getElementById('userEmptyState'),
+        groupCards: () => document.getElementById('groupCards'),
+        groupEmpty: () => document.getElementById('groupEmptyState'),
+        alertContainer: () => document.getElementById('alertContainer'),
+        userList: () => document.getElementById('userList'),
+        groupList: () => document.getElementById('groupList'),
         userForm: () => document.getElementById('userForm'),
         passwordForm: () => document.getElementById('passwordForm'),
+        userModalLabel: () => document.getElementById('userModalLabel'),
     };
 
-    function showView(name) {
-        document.getElementById('userList').hidden = name !== 'users';
-        document.getElementById('groupList').hidden = name !== 'groups';
+    const urls = {
+        users: '/users',
+        groups: '/groups',
+    };
+
+    function init() {
+        if (elements.data()) {
+            state = JSON.parse(elements.data().textContent || '{}');
+        }
+        state.users = state.users || [];
+        state.groups = state.groups || [];
+        state.permissions = state.permissions || { add: false, edit: false, delete: false };
+
+        modals.user = bootstrap.Modal.getOrCreateInstance(document.getElementById('userModal'));
+        modals.password = bootstrap.Modal.getOrCreateInstance(document.getElementById('passwordModal'));
+        modals.groupMembers = bootstrap.Modal.getOrCreateInstance(document.getElementById('groupMembersModal'));
+
+        bindSidebar();
+        refreshGroupStats();
+        renderUsers();
+        renderGroups();
+        showView('users');
+    }
+
+    function bindSidebar() {
+        const sidebar = elements.sidebar();
+        if (!sidebar) return;
+        sidebar.querySelectorAll('[data-view]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                showView(btn.dataset.view);
+            });
+        });
+    }
+
+    function showView(view) {
+        const isUsers = view === 'users';
+        elements.userList().hidden = !isUsers;
+        elements.groupList().hidden = isUsers;
+        const sidebar = elements.sidebar();
+        if (sidebar) {
+            sidebar.querySelectorAll('[data-view]').forEach((btn) => {
+                btn.classList.toggle('active', btn.dataset.view === view);
+            });
+        }
+    }
+
+    function renderUsers() {
+        const tbody = elements.userTableBody();
+        if (!tbody) return;
+        if (!state.users.length) {
+            tbody.innerHTML = '';
+            elements.userEmpty().hidden = false;
+            updateUserCount();
+            return;
+        }
+
+        const currentId = Number(document.getElementById('currentUserId').value);
+        elements.userEmpty().hidden = true;
+        tbody.innerHTML = state.users
+            .map((user) => createUserRow(user, currentId))
+            .join('');
+        updateUserCount();
+
+        tbody.querySelectorAll('[data-action="edit"]').forEach((btn) => {
+            btn.addEventListener('click', () => openEditUser(btn.dataset.id));
+        });
+        tbody.querySelectorAll('[data-action="password"]').forEach((btn) => {
+            btn.addEventListener('click', () => openPasswordModal(btn.dataset.id));
+        });
+        tbody.querySelectorAll('[data-action="delete"]').forEach((btn) => {
+            btn.addEventListener('click', () => confirmDelete(btn.dataset.id));
+        });
+    }
+
+    function createUserRow(user, currentId) {
+        const canEdit = state.permissions.edit;
+        const canDelete = state.permissions.delete && user.id !== currentId;
+        const actions = [];
+
+        if (canEdit) {
+            actions.push(
+                `<button class="btn btn-sm btn-outline-primary me-1" data-action="edit" data-id="${user.id}">编辑</button>`,
+                `<button class="btn btn-sm btn-outline-warning me-1" data-action="password" data-id="${user.id}">修改密码</button>`
+            );
+        }
+        if (canDelete) {
+            actions.push(`<button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${user.id}">删除</button>`);
+        }
+
+        return `
+        <tr data-user-id="${user.id}">
+            <td>${escapeHtml(user.username)}</td>
+            <td>${escapeHtml(user.email || '-')}</td>
+            <td>${escapeHtml(user.group_name || '未分配')}</td>
+            <td>${user.is_active ? '<span class="badge bg-success">正常</span>' : '<span class="badge bg-danger">禁用</span>'}</td>
+            <td class="text-end">${actions.join('')}</td>
+        </tr>`;
+    }
+
+    function renderGroups() {
+        const container = elements.groupCards();
+        if (!container) return;
+        if (!state.groups.length) {
+            container.innerHTML = '';
+            elements.groupEmpty().hidden = false;
+            updateGroupCount();
+            return;
+        }
+
+        elements.groupEmpty().hidden = true;
+        container.innerHTML = state.groups
+            .map((group) => `
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">${escapeHtml(group.name)}</h5>
+                                <span class="badge bg-secondary">${group.user_count} 人</span>
+                            </div>
+                            <p class="card-text text-muted small flex-grow-1">${escapeHtml(group.description || '暂无描述')}</p>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-primary btn-sm" data-group-action="members" data-id="${group.id}">查看成员</button>
+                                ${state.permissions.edit ? `<button class="btn btn-outline-secondary btn-sm" data-group-action="add" data-id="${group.id}">添加成员</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>`)
+            .join('');
+        updateGroupCount();
+
+        container.querySelectorAll('[data-group-action="members"]').forEach((btn) => {
+            btn.addEventListener('click', () => showGroupMembers(btn.dataset.id));
+        });
+        container.querySelectorAll('[data-group-action="add"]').forEach((btn) => {
+            btn.addEventListener('click', () => openAddUserToGroup(btn.dataset.id));
+        });
     }
 
     function openCreateUser() {
-        const form = dom.userForm();
+        if (!state.permissions.add) {
+            showMessage('当前账号无权新增用户', 'warning');
+            return;
+        }
+        const form = elements.userForm();
         form.reset();
         form.querySelector('#userId').value = '';
         form.querySelector('#password').required = true;
-        dom.userModal().show();
-        document.getElementById('userModalLabel').textContent = '新增用户';
+        elements.userModalLabel().textContent = '新增用户';
+        modals.user.show();
     }
 
     function openEditUser(id) {
-        fetch(`${endpoints.users}/${id}/`)
-            .then(res => res.json())
-            .then(user => {
-                const form = dom.userForm();
-                form.reset();
-                form.querySelector('#userId').value = user.id;
-                form.querySelector('#username').value = user.username;
-                form.querySelector('#email').value = user.email || '';
-                form.querySelector('#password').value = '';
-                form.querySelector('#password').required = false;
-                form.querySelector('#groupId').value = user.group_id || '';
-                form.querySelector('#isActive').value = user.is_active ? 'true' : 'false';
-                dom.userModal().show();
-                document.getElementById('userModalLabel').textContent = '编辑用户';
-            });
+        const user = state.users.find((item) => String(item.id) === String(id));
+        if (!user) return;
+        const form = elements.userForm();
+        form.reset();
+        form.querySelector('#userId').value = user.id;
+        form.querySelector('#username').value = user.username;
+        form.querySelector('#email').value = user.email || '';
+        form.querySelector('#password').value = '';
+        form.querySelector('#password').required = false;
+        form.querySelector('#groupId').value = user.group_id || '';
+        form.querySelector('#isActive').value = user.is_active ? 'true' : 'false';
+        elements.userModalLabel().textContent = '编辑用户';
+        modals.user.show();
     }
 
     function submitUserForm() {
-        const form = dom.userForm();
+        const form = elements.userForm();
         const formData = new FormData(form);
         const payload = Object.fromEntries(formData.entries());
+        const userId = payload.id;
+
         payload.is_active = payload.is_active === 'true';
         if (!payload.password) delete payload.password;
         if (!payload.group_id) payload.group_id = null;
-
-        const userId = payload.id;
         delete payload.id;
         delete payload.csrf_token;
 
-        const url = userId ? `${endpoints.users}/${userId}/update/` : `${endpoints.users}/create/`;
-        fetch(url, {
+        const url = userId ? `${urls.users}/${userId}/update/` : `${urls.users}/create/`;
+
+        apiFetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken(),
-            },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
         })
-            .then(res => res.json())
-            .then(data => {
+            .then((res) => res.json())
+            .then((data) => {
                 if (data.status === 'success') {
-                    dom.userModal().hide();
-                    window.location.reload();
+                    syncUser(data.data);
+                    refreshGroupStats();
+                    renderUsers();
+                    renderGroups();
+                    modals.user.hide();
+                    showMessage(userId ? '用户更新成功' : '用户创建成功', 'success');
                 } else {
-                    alert(data.message || '操作失败');
+                    showMessage(data.message || '操作未成功', 'danger');
                 }
-            });
+            })
+            .catch(() => showMessage('请求失败，请稍后再试', 'danger'));
     }
 
     function confirmDelete(id) {
+        if (!state.permissions.delete) {
+            showMessage('当前账号无权删除用户', 'warning');
+            return;
+        }
         if (!confirm('确定要删除该用户吗？')) return;
-        fetch(`${endpoints.users}/${id}/delete/`, {
+        apiFetch(`${urls.users}/${id}/delete/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken(),
-            },
-            body: JSON.stringify({})
+            body: JSON.stringify({}),
         })
-            .then(res => res.json())
-            .then(data => {
+            .then((res) => res.json())
+            .then((data) => {
                 if (data.status === 'success') {
-                    window.location.reload();
+                    state.users = state.users.filter((user) => String(user.id) !== String(id));
+                    refreshGroupStats();
+                    renderUsers();
+                    renderGroups();
+                    showMessage('用户删除成功', 'success');
                 } else {
-                    alert(data.message || '删除失败');
+                    showMessage(data.message || '操作未成功', 'danger');
                 }
-            });
+            })
+            .catch(() => showMessage('请求失败，请稍后再试', 'danger'));
     }
 
     function openPasswordModal(id) {
-        dom.passwordForm().reset();
+        const form = elements.passwordForm();
+        form.reset();
         document.getElementById('passwordUserId').value = id;
         const oldWrapper = document.getElementById('oldPasswordWrapper');
-        oldWrapper.hidden = id !== parseInt(document.getElementById('currentUserId').value, 10);
-        dom.passwordModal().show();
+        const currentId = Number(document.getElementById('currentUserId').value);
+        oldWrapper.hidden = Number(id) !== currentId;
+        modals.password.show();
     }
 
     function submitPasswordChange() {
-        const form = dom.passwordForm();
         const userId = document.getElementById('passwordUserId').value;
         const payload = {
             new_password: document.getElementById('newPassword').value,
             old_password: document.getElementById('oldPassword').value,
         };
-
-        fetch(`${endpoints.users}/${userId}/change-password/`, {
+        apiFetch(`${urls.users}/${userId}/change-password/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken(),
-            },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
         })
-            .then(res => res.json())
-            .then(data => {
+            .then((res) => res.json())
+            .then((data) => {
                 if (data.status === 'success') {
-                    dom.passwordModal().hide();
-                    alert('密码修改成功');
+                    modals.password.hide();
+                    showMessage('密码修改成功', 'success');
                 } else {
-                    alert(data.message || '密码修改失败');
+                    showMessage(data.message || '密码修改失败', 'danger');
                 }
-            });
+            })
+            .catch(() => showMessage('请求失败，请稍后再试', 'danger'));
     }
 
-    let currentGroup = null;
-
     function showGroupMembers(groupId) {
-        currentGroup = groupId;
-        fetch(`${endpoints.groups}/${groupId}/members/`)
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('groupMembersModalTitle').textContent = `${data.group_name} - 成员列表`;
+        apiFetch(`${urls.groups}/${groupId}/members/`)
+            .then((res) => res.json())
+            .then((data) => {
+                const modalTitle = document.getElementById('groupMembersModalTitle');
                 const tbody = document.getElementById('groupMembersTableBody');
-                tbody.innerHTML = '';
+                const addSection = document.getElementById('groupMemberAddSection');
+                const select = document.getElementById('userToAdd');
 
-                data.members.forEach(member => {
+                modalTitle.textContent = `${data.group_name} - 成员列表`;
+                tbody.innerHTML = '';
+                data.members.forEach((member) => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${member.username}</td>
-                        <td>${member.email || '-'}</td>
+                        <td>${escapeHtml(member.username)}</td>
+                        <td>${escapeHtml(member.email || '-')}</td>
                         <td>${member.is_active ? '<span class="badge bg-success">正常</span>' : '<span class="badge bg-danger">禁用</span>'}</td>
                         <td class="text-end">
-                            <button class="btn btn-sm btn-outline-danger" data-user-id="${member.id}">移出</button>
-                        </td>
-                    `;
-                    row.querySelector('button').addEventListener('click', () => removeUserFromGroup(member.id));
+                            ${state.permissions.edit ? `<button class="btn btn-sm btn-outline-danger" data-remove="${member.id}">移出</button>` : ''}
+                        </td>`;
                     tbody.appendChild(row);
                 });
 
-                prepareGroupAddSection(groupId, data.group_name);
-                dom.groupMembersModal().show();
-            });
-    }
+                if (state.permissions.edit) {
+                    addSection.hidden = false;
+                    select.innerHTML = '<option value="">选择用户...</option>';
+                    apiFetch(`${urls.groups}/available-for-group/${groupId}`)
+                        .then((res) => res.json())
+                        .then((available) => {
+                            select.innerHTML = '<option value="">选择用户...</option>';
+                            available.users.forEach((user) => {
+                                select.innerHTML += `<option value="${user.id}">${escapeHtml(user.username)}</option>`;
+                            });
+                        });
+                } else {
+                    addSection.hidden = true;
+                }
 
-    function prepareGroupAddSection(groupId, groupName) {
-        const addSection = document.getElementById('groupMemberAddSection');
-        if (!addSection) return;
-
-        fetch(`${endpoints.groups}/available-for-group/${groupId}`)
-            .then(res => res.json())
-            .then(data => {
-                const select = document.getElementById('userToAdd');
-                select.innerHTML = '<option value="">选择用户...</option>';
-                data.users.forEach(user => {
-                    select.innerHTML += `<option value="${user.id}">${user.username}</option>`;
+                tbody.querySelectorAll('[data-remove]').forEach((btn) => {
+                    btn.addEventListener('click', () => removeUserFromGroup(groupId, btn.dataset.remove));
                 });
+
+                select.dataset.groupId = groupId;
+                modals.groupMembers.show();
             });
     }
 
@@ -184,51 +329,126 @@ const Dashboard = (() => {
     }
 
     function addUserToGroup() {
-        const userId = document.getElementById('userToAdd').value;
+        const select = document.getElementById('userToAdd');
+        const groupId = select.dataset.groupId;
+        const userId = select.value;
         if (!userId) {
-            alert('请选择用户');
+            showMessage('请选择用户', 'warning');
             return;
         }
-
-        fetch(`${endpoints.users}/${userId}/change-group/`, {
+        apiFetch(`${urls.users}/${userId}/change-group/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken(),
-            },
-            body: JSON.stringify({ group_id: currentGroup })
+            body: JSON.stringify({ group_id: groupId }),
         })
-            .then(res => res.json())
-            .then(data => {
+            .then((res) => res.json())
+            .then((data) => {
                 if (data.status === 'success') {
-                    showGroupMembers(currentGroup);
+                    syncUser(data.data);
+                    refreshGroupStats();
+                    renderUsers();
+                    renderGroups();
+                    showGroupMembers(groupId);
+                    showMessage('已添加成员', 'success');
                 } else {
-                    alert(data.message || '添加失败');
+                    showMessage(data.message || '操作未成功', 'danger');
                 }
             });
     }
 
-    function removeUserFromGroup(userId) {
-        if (!confirm('确定要将该用户移出该用户组吗？')) return;
-        fetch(`${endpoints.users}/${userId}/change-group/`, {
+    function removeUserFromGroup(groupId, userId) {
+        if (!confirm('确定将该用户移出此用户组？')) return;
+        apiFetch(`${urls.users}/${userId}/change-group/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken(),
-            },
-            body: JSON.stringify({ group_id: null })
+            body: JSON.stringify({ group_id: null }),
         })
-            .then(res => res.json())
-            .then(data => {
+            .then((res) => res.json())
+            .then((data) => {
                 if (data.status === 'success') {
-                    showGroupMembers(currentGroup);
+                    syncUser(data.data);
+                    refreshGroupStats();
+                    renderUsers();
+                    renderGroups();
+                    showGroupMembers(groupId);
+                    showMessage('已移除成员', 'info');
                 } else {
-                    alert(data.message || '操作失败');
+                    showMessage(data.message || '操作未成功', 'danger');
                 }
             });
+    }
+
+    function syncUser(userData) {
+        if (!userData) return;
+        const index = state.users.findIndex((item) => item.id === userData.id);
+        if (index >= 0) {
+            state.users[index] = userData;
+        } else {
+            state.users.push(userData);
+        }
+    }
+
+    function refreshGroupStats() {
+        const counts = state.groups.reduce((acc, group) => {
+            acc[group.id] = 0;
+            return acc;
+        }, {});
+        state.users.forEach((user) => {
+            if (user.group_id && Object.prototype.hasOwnProperty.call(counts, user.group_id)) {
+                counts[user.group_id] += 1;
+            }
+        });
+        state.groups = state.groups.map((group) => ({ ...group, user_count: counts[group.id] ?? group.user_count }));
+    }
+
+    function updateUserCount() {
+        const label = document.getElementById('userCountLabel');
+        if (!label) return;
+        label.textContent = `当前共 ${state.users.length} 位用户`;
+    }
+
+    function updateGroupCount() {
+        const label = document.getElementById('groupCountLabel');
+        if (!label) return;
+        label.textContent = `共 ${state.groups.length} 个用户组`;
+    }
+
+    function showMessage(message, variant = 'success') {
+        const container = elements.alertContainer();
+        if (!container) return;
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${variant} alert-dismissible fade show`;
+        alert.role = 'alert';
+        alert.innerHTML = `${escapeHtml(message)}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="关闭"></button>`;
+        container.appendChild(alert);
+        setTimeout(() => {
+            const fadeAlert = bootstrap.Alert.getOrCreateInstance(alert);
+            fadeAlert.close();
+        }, 4000);
+    }
+
+    function escapeHtmll(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function apiFetch(url, options = {}) {
+        const opts = { ...options };
+        opts.headers = Object.assign({ 'X-Requested-With': 'XMLHttpRequest' }, opts.headers || {});
+        if (opts.body && !opts.headers['Content-Type']) {
+            opts.headers['Content-Type'] = 'application/json';
+        }
+        const token = elements.csrf();
+        if (token) {
+            opts.headers['X-CSRFToken'] = token.value;
+        }
+        return fetch(url, opts);
     }
 
     return {
+        init,
         showView,
         openCreateUser,
         openEditUser,

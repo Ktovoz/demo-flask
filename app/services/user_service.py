@@ -30,6 +30,14 @@ def _normalise_group_id(value: Optional[Any]) -> Optional[int]:
         return None
 
 
+def _to_bool(value: Any, default: bool = True) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return default
+    return str(value).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
 def create_user(payload: Dict[str, Any]) -> ServiceResponse:
     username = (payload.get('username') or '').strip()
     if not username:
@@ -42,7 +50,7 @@ def create_user(payload: Dict[str, Any]) -> ServiceResponse:
         username=username,
         email=(payload.get('email') or '').strip() or None,
         password=payload.get('password'),
-        is_active=payload.get('is_active', True)
+        is_active=_to_bool(payload.get('is_active'), True)
     )
 
     group = _load_group(_normalise_group_id(payload.get('group_id')))
@@ -75,7 +83,7 @@ def update_user(user: User, payload: Dict[str, Any]) -> ServiceResponse:
         user.password = payload['password']
 
     if 'is_active' in payload:
-        user.is_active = bool(payload['is_active'])
+        user.is_active = _to_bool(payload.get('is_active'), user.is_active)
 
     if 'group_id' in payload:
         group = _load_group(_normalise_group_id(payload.get('group_id')))

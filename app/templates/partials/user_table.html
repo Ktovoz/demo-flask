@@ -1,8 +1,8 @@
-﻿<section id="userList" class="content-card">
+<section id="userList" class="content-card">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="h4 mb-0">用户列表</h2>
-            <p class="text-muted small mb-0">共 {{ users|length }} 位用户</p>
+            <p class="text-muted small mb-0" id="userCountLabel">当前共 {{ users|length }} 位用户</p>
         </div>
         {% if current_user.has_permission('add_user') %}
         <button class="btn btn-primary btn-sm" onclick="Dashboard.openCreateUser()">
@@ -26,8 +26,8 @@
                 {% for item in users %}
                 <tr data-user-id="{{ item.id }}">
                     <td>{{ item.username }}</td>
-                    <td>{{ item.email|default('-') }}</td>
-                    <td>{{ item.group_name|default('未分配') }}</td>
+                    <td>{{ item.email or '-' }}</td>
+                    <td>{{ item.group_name or '未分配' }}</td>
                     <td>
                         {% if item.is_active %}
                         <span class="badge bg-success">正常</span>
@@ -37,16 +37,21 @@
                     </td>
                     <td class="text-end">
                         {% if current_user.has_permission('edit_user') %}
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="Dashboard.openEditUser({{ item.id }})">编辑</button>
-                        <button class="btn btn-sm btn-outline-warning me-1" onclick="Dashboard.openPasswordModal({{ item.id }})">修改密码</button>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="Dashboard.openEditUser('{{ item.id }}')">编辑</button>
+                        <button class="btn btn-sm btn-outline-warning me-1" onclick="Dashboard.openPasswordModal('{{ item.id }}')">修改密码</button>
                         {% endif %}
                         {% if current_user.has_permission('delete_user') and item.id != current_user.id %}
-                        <button class="btn btn-sm btn-outline-danger" onclick="Dashboard.confirmDelete({{ item.id }})">删除</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="Dashboard.confirmDelete('{{ item.id }}')">删除</button>
                         {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+    <div id="userEmptyState" class="text-center text-muted py-5" hidden>
+        <i class="bi bi-people display-6 d-block mb-3"></i>
+        <p class="mb-1">暂无用户数据</p>
+        <p class="small">点击右上角 “新增用户” 按钮创建第一位用户。</p>
     </div>
 </section>
