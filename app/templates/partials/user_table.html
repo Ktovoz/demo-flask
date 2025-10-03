@@ -1,0 +1,52 @@
+﻿<section id="userList" class="content-card">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h4 mb-0">用户列表</h2>
+            <p class="text-muted small mb-0">共 {{ users|length }} 位用户</p>
+        </div>
+        {% if current_user.has_permission('add_user') %}
+        <button class="btn btn-primary btn-sm" onclick="Dashboard.openCreateUser()">
+            <i class="bi bi-plus-circle me-1"></i>新增用户
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>用户名</th>
+                    <th>邮箱</th>
+                    <th>用户组</th>
+                    <th>状态</th>
+                    <th class="text-end">操作</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                {% for item in users %}
+                <tr data-user-id="{{ item.id }}">
+                    <td>{{ item.username }}</td>
+                    <td>{{ item.email|default('-') }}</td>
+                    <td>{{ item.group_name|default('未分配') }}</td>
+                    <td>
+                        {% if item.is_active %}
+                        <span class="badge bg-success">正常</span>
+                        {% else %}
+                        <span class="badge bg-danger">禁用</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        {% if current_user.has_permission('edit_user') %}
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="Dashboard.openEditUser({{ item.id }})">编辑</button>
+                        <button class="btn btn-sm btn-outline-warning me-1" onclick="Dashboard.openPasswordModal({{ item.id }})">修改密码</button>
+                        {% endif %}
+                        {% if current_user.has_permission('delete_user') and item.id != current_user.id %}
+                        <button class="btn btn-sm btn-outline-danger" onclick="Dashboard.confirmDelete({{ item.id }})">删除</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>

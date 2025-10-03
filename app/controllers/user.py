@@ -8,6 +8,7 @@ from app.services.user_service import (
     create_user,
     delete_user,
     update_user,
+    update_user_group,
 )
 from app.utils.decorators import permission_required
 
@@ -16,7 +17,10 @@ user_bp = Blueprint('user', __name__)
 
 
 def _build_response(result: ServiceResponse):
-    payload = {'status': 'success' if result.success else 'error', 'message': result.message}
+    payload = {
+        'status': 'success' if result.success else 'error',
+        'message': result.message,
+    }
     if result.data is not None:
         payload['data'] = result.data
     return jsonify(payload)
@@ -77,4 +81,14 @@ def change_password_route(user_id):
             return jsonify({'status': 'error', 'message': '旧密码错误'})
 
     result = change_password(user, new_password)
+    return _build_response(result)
+
+
+@user_bp.route('/<int:user_id>/change-group/', methods=['POST'])
+@login_required
+@permission_required('edit_user')
+def change_group_route(user_id):
+    user = User.query.get_or_404(user_id)
+    data = request.get_json() or {}
+    result = update_user_group(user, data.get('group_id'))
     return _build_response(result)

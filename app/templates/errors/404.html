@@ -1,9 +1,11 @@
-{% extends "base.html" %}
+﻿{% extends "layouts/base.html" %}
 
-{% block content %}
-<div class="container text-center py-5">
-    <h1 class="display-1 text-danger">404</h1>
-    <p class="lead">抱歉，您访问的页面不存在</p>
+{% block body_class %}bg-light d-flex align-items-center justify-content-center{% endblock %}
+
+{% block body %}
+<div class="text-center">
+    <h1 class="display-1 text-warning">404</h1>
+    <p class="lead">未找到页面，请检查链接是否正确。</p>
     <a href="{{ url_for('main.index') }}" class="btn btn-primary">返回首页</a>
 </div>
-{% endblock %} 
+{% endblock %}

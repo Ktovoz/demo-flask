@@ -1,9 +1,11 @@
-{% extends "base.html" %}
+﻿{% extends "layouts/base.html" %}
 
-{% block content %}
-<div class="container text-center py-5">
+{% block body_class %}bg-light d-flex align-items-center justify-content-center{% endblock %}
+
+{% block body %}
+<div class="text-center">
     <h1 class="display-1 text-danger">500</h1>
-    <p class="lead">抱歉，服务器出现了错误</p>
+    <p class="lead">服务器开小差了，请稍后再试。</p>
     <a href="{{ url_for('main.index') }}" class="btn btn-primary">返回首页</a>
 </div>
-{% endblock %} 
+{% endblock %}

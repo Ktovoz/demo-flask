@@ -1,0 +1,39 @@
+﻿{% extends "layouts/base.html" %}
+
+{% block body_class %}bg-light{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .app-shell {
+        display: flex;
+        min-height: 100vh;
+    }
+    .app-sidebar {
+        width: 280px;
+        background: #ffffff;
+        box-shadow: 2px 0 12px rgba(15, 23, 42, 0.08);
+        padding: 1.5rem 1rem;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+    }
+    .app-content {
+        flex: 1;
+        padding: 2rem;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="app-shell">
+    <aside class="app-sidebar">
+        {% block sidebar %}{% endblock %}
+    </aside>
+    <main class="app-content">
+        {% block app_content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}

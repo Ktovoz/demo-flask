@@ -46,6 +46,7 @@ class User(UserMixin, db.Model):
             'email': self.email,
             'is_active': self.is_active,
             'group_name': self.group_name,
+            'group_id': self.group_id,
         }
 
 

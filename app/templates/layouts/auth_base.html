@@ -1,0 +1,22 @@
+﻿{% extends "layouts/base.html" %}
+
+{% block body_class %}bg-gradient-primary d-flex align-items-center justify-content-center{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .auth-card {
+        width: min(420px, 100%);
+        background: rgba(255, 255, 255, 0.96);
+        border-radius: 16px;
+        box-shadow: 0 20px 45px rgba(105, 81, 255, 0.25);
+        padding: 2.5rem 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="auth-card">
+    {% block auth_content %}{% endblock %}
+</div>
+{% endblock %}

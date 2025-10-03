@@ -7,7 +7,7 @@ from app.utils.bootstrap import ensure_seed_data
 from app.utils.logging import configure_logging
 
 
-def create_app(config_name='default'):
+def create_app(config_name: str = 'default') -> Flask:
     app = Flask(__name__)
     app.config.from_object(config[config_name])
 

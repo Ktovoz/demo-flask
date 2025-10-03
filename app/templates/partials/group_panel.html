@@ -1,0 +1,30 @@
+﻿<section id="groupList" class="content-card" hidden>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h4 mb-0">用户组</h2>
+            <p class="text-muted small mb-0">共 {{ groups|length }} 个用户组</p>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        {% for group in groups %}
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title mb-0">{{ group.name }}</h5>
+                        <span class="badge bg-secondary">{{ group.user_count }} 人</span>
+                    </div>
+                    <p class="card-text text-muted small mb-3">{{ group.description|default('暂无描述') }}</p>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="Dashboard.showGroupMembers({{ group.id }})">查看成员</button>
+                        {% if current_user.has_permission('edit_user') %}
+                        <button class="btn btn-outline-secondary btn-sm" onclick="Dashboard.openAddUserToGroup({{ group.id }})">添加成员</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>

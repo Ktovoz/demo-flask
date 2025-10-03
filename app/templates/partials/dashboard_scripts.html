@@ -1,0 +1,245 @@
+﻿<script>
+const Dashboard = (() => {
+    const csrfToken = () => document.getElementById('csrfToken').value;
+
+    const endpoints = {
+        users: '/users',
+        groups: '/groups'
+    };
+
+    const dom = {
+        userModal: () => bootstrap.Modal.getOrCreateInstance(document.getElementById('userModal')),
+        passwordModal: () => bootstrap.Modal.getOrCreateInstance(document.getElementById('passwordModal')),
+        groupMembersModal: () => bootstrap.Modal.getOrCreateInstance(document.getElementById('groupMembersModal')),
+        userForm: () => document.getElementById('userForm'),
+        passwordForm: () => document.getElementById('passwordForm'),
+    };
+
+    function showView(name) {
+        document.getElementById('userList').hidden = name !== 'users';
+        document.getElementById('groupList').hidden = name !== 'groups';
+    }
+
+    function openCreateUser() {
+        const form = dom.userForm();
+        form.reset();
+        form.querySelector('#userId').value = '';
+        form.querySelector('#password').required = true;
+        dom.userModal().show();
+        document.getElementById('userModalLabel').textContent = '新增用户';
+    }
+
+    function openEditUser(id) {
+        fetch(`${endpoints.users}/${id}/`)
+            .then(res => res.json())
+            .then(user => {
+                const form = dom.userForm();
+                form.reset();
+                form.querySelector('#userId').value = user.id;
+                form.querySelector('#username').value = user.username;
+                form.querySelector('#email').value = user.email || '';
+                form.querySelector('#password').value = '';
+                form.querySelector('#password').required = false;
+                form.querySelector('#groupId').value = user.group_id || '';
+                form.querySelector('#isActive').value = user.is_active ? 'true' : 'false';
+                dom.userModal().show();
+                document.getElementById('userModalLabel').textContent = '编辑用户';
+            });
+    }
+
+    function submitUserForm() {
+        const form = dom.userForm();
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+        payload.is_active = payload.is_active === 'true';
+        if (!payload.password) delete payload.password;
+        if (!payload.group_id) payload.group_id = null;
+
+        const userId = payload.id;
+        delete payload.id;
+        delete payload.csrf_token;
+
+        const url = userId ? `${endpoints.users}/${userId}/update/` : `${endpoints.users}/create/`;
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken(),
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    dom.userModal().hide();
+                    window.location.reload();
+                } else {
+                    alert(data.message || '操作失败');
+                }
+            });
+    }
+
+    function confirmDelete(id) {
+        if (!confirm('确定要删除该用户吗？')) return;
+        fetch(`${endpoints.users}/${id}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken(),
+            },
+            body: JSON.stringify({})
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.reload();
+                } else {
+                    alert(data.message || '删除失败');
+                }
+            });
+    }
+
+    function openPasswordModal(id) {
+        dom.passwordForm().reset();
+        document.getElementById('passwordUserId').value = id;
+        const oldWrapper = document.getElementById('oldPasswordWrapper');
+        oldWrapper.hidden = id !== parseInt(document.getElementById('currentUserId').value, 10);
+        dom.passwordModal().show();
+    }
+
+    function submitPasswordChange() {
+        const form = dom.passwordForm();
+        const userId = document.getElementById('passwordUserId').value;
+        const payload = {
+            new_password: document.getElementById('newPassword').value,
+            old_password: document.getElementById('oldPassword').value,
+        };
+
+        fetch(`${endpoints.users}/${userId}/change-password/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken(),
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    dom.passwordModal().hide();
+                    alert('密码修改成功');
+                } else {
+                    alert(data.message || '密码修改失败');
+                }
+            });
+    }
+
+    let currentGroup = null;
+
+    function showGroupMembers(groupId) {
+        currentGroup = groupId;
+        fetch(`${endpoints.groups}/${groupId}/members/`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('groupMembersModalTitle').textContent = `${data.group_name} - 成员列表`;
+                const tbody = document.getElementById('groupMembersTableBody');
+                tbody.innerHTML = '';
+
+                data.members.forEach(member => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${member.username}</td>
+                        <td>${member.email || '-'}</td>
+                        <td>${member.is_active ? '<span class="badge bg-success">正常</span>' : '<span class="badge bg-danger">禁用</span>'}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-danger" data-user-id="${member.id}">移出</button>
+                        </td>
+                    `;
+                    row.querySelector('button').addEventListener('click', () => removeUserFromGroup(member.id));
+                    tbody.appendChild(row);
+                });
+
+                prepareGroupAddSection(groupId, data.group_name);
+                dom.groupMembersModal().show();
+            });
+    }
+
+    function prepareGroupAddSection(groupId, groupName) {
+        const addSection = document.getElementById('groupMemberAddSection');
+        if (!addSection) return;
+
+        fetch(`${endpoints.groups}/available-for-group/${groupId}`)
+            .then(res => res.json())
+            .then(data => {
+                const select = document.getElementById('userToAdd');
+                select.innerHTML = '<option value="">选择用户...</option>';
+                data.users.forEach(user => {
+                    select.innerHTML += `<option value="${user.id}">${user.username}</option>`;
+                });
+            });
+    }
+
+    function openAddUserToGroup(groupId) {
+        showGroupMembers(groupId);
+    }
+
+    function addUserToGroup() {
+        const userId = document.getElementById('userToAdd').value;
+        if (!userId) {
+            alert('请选择用户');
+            return;
+        }
+
+        fetch(`${endpoints.users}/${userId}/change-group/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken(),
+            },
+            body: JSON.stringify({ group_id: currentGroup })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showGroupMembers(currentGroup);
+                } else {
+                    alert(data.message || '添加失败');
+                }
+            });
+    }
+
+    function removeUserFromGroup(userId) {
+        if (!confirm('确定要将该用户移出该用户组吗？')) return;
+        fetch(`${endpoints.users}/${userId}/change-group/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken(),
+            },
+            body: JSON.stringify({ group_id: null })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showGroupMembers(currentGroup);
+                } else {
+                    alert(data.message || '操作失败');
+                }
+            });
+    }
+
+    return {
+        showView,
+        openCreateUser,
+        openEditUser,
+        submitUserForm,
+        confirmDelete,
+        openPasswordModal,
+        submitPasswordChange,
+        showGroupMembers,
+        openAddUserToGroup,
+        addUserToGroup,
+        removeUserFromGroup,
+    };
+})();
+</script>
