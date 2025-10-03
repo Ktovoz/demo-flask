@@ -15,7 +15,8 @@
     .form-signin .form-floating:focus-within {
         z-index: 2;
     }
-    .form-signin input[type="text"] {
+    .form-signin input[type="text"],
+    .form-signin input[type="email"] {
         margin-bottom: -1px;
         border-bottom-right-radius: 0;
         border-bottom-left-radius: 0;
@@ -34,6 +35,11 @@
         background-color: #667eea;
         border-color: #667eea;
     }
+    .demo-credentials {
+        border: 1px dashed #667eea;
+        background: rgba(102, 126, 234, 0.08);
+        color: #3f51b5;
+    }
 </style>
 {% endblock %}
 
@@ -41,7 +47,14 @@
 <main class="form-signin w-100 m-auto">
     <form method="post">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <h1 class="h3 mb-4 fw-normal text-primary">Flask演示系统</h1>
+        <h1 class="h3 mb-4 fw-normal text-primary">Flask 演示系统</h1>
+
+        <div class="alert demo-credentials mb-4" role="alert">
+            <strong>演示账号</strong><br>
+            用户名：demo<br>
+            密码：demo1234
+        </div>
+
         <div class="form-floating mb-3">
             <input type="text" class="form-control" id="username" name="username" placeholder="用户名">
             <label for="username">用户名</label>
@@ -57,7 +70,7 @@
         <button class="w-100 btn btn-lg btn-primary mb-4" type="submit">登录</button>
         {% with messages = get_flashed_messages() %}
         {% if messages %}
-        <div class="alert alert-danger mt-3">
+        <div class="alert alert-danger mt-3" role="alert">
             {{ messages[-1] }}
         </div>
         {% endif %}
