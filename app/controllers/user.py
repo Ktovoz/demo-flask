@@ -15,10 +15,18 @@ from app.utils.decorators import permission_required
 from app.utils.request_logger import log_user_action
 
 
-user_bp = Blueprint('user', __name__)
+user_bp = Blueprint('user', __name__, url_prefix='/users')
 
 
 def _build_response(result: ServiceResponse):
+    """构建统一的API响应格式
+    
+    Args:
+        result: ServiceResponse 服务层返回的结果对象
+        
+    Returns:
+        JSON: 统一格式的API响应
+    """
     payload = {
         'status': 'success' if result.success else 'error',
         'message': result.message,
@@ -31,6 +39,14 @@ def _build_response(result: ServiceResponse):
 @user_bp.route('/<int:user_id>/')
 @login_required
 def get_user(user_id):
+    """获取指定用户信息
+    
+    Args:
+        user_id: 用户ID
+        
+    Returns:
+        JSON: 用户信息字典
+    """
     user = User.query.get_or_404(user_id)
     # 记录查看用户信息行为
     log_user_action(
@@ -48,6 +64,15 @@ def get_user(user_id):
 @login_required
 @permission_required('add_user')
 def create_user_route():
+    """创建新用户
+    
+    权限要求: add_user
+    请求方法: POST
+    请求体: JSON 格式的用户数据
+    
+    Returns:
+        JSON: 创建结果
+    """
     data = request.get_json() or {}
     result = create_user(data)
     
@@ -78,6 +103,18 @@ def create_user_route():
 @login_required
 @permission_required('edit_user')
 def update_user_route(user_id):
+    """更新用户信息
+    
+    权限要求: edit_user
+    请求方法: POST
+    请求体: JSON 格式的用户更新数据
+    路径参数: user_id - 要更新的用户ID
+    
+    Args:
+        user_id: 用户ID
+    Returns:
+        JSON: 更新结果
+    """
     user = User.query.get_or_404(user_id)
     data = request.get_json() or {}
     result = update_user(user, data)
@@ -110,6 +147,17 @@ def update_user_route(user_id):
 @login_required
 @permission_required('delete_user')
 def delete_user_route(user_id):
+    """删除用户
+    
+    权限要求: delete_user
+    请求方法: POST
+    路径参数: user_id - 要删除的用户ID
+    
+    Args:
+        user_id: 用户ID
+    Returns:
+        JSON: 删除结果
+    """
     if user_id == current_user.id:
         log_user_action(
             "尝试删除自己账户",
@@ -150,6 +198,18 @@ def delete_user_route(user_id):
 @user_bp.route('/<int:user_id>/change-password/', methods=['POST'])
 @login_required
 def change_password_route(user_id):
+    """修改用户密码
+    
+    登录用户可修改自己的密码，具有 edit_user 权限的用户可修改他人密码
+    请求方法: POST
+    请求体: JSON 格式，包含 new_password 和可选的 old_password
+    路径参数: user_id - 要修改密码的用户ID
+    
+    Args:
+        user_id: 用户ID
+    Returns:
+        JSON: 修改结果
+    """
     if user_id != current_user.id and not current_user.has_permission('edit_user'):
         log_user_action(
             "尝试修改他人密码（无权限）",
@@ -216,6 +276,18 @@ def change_password_route(user_id):
 @login_required
 @permission_required('edit_user')
 def change_group_route(user_id):
+    """修改用户组
+    
+    权限要求: edit_user
+    请求方法: POST
+    请求体: JSON 格式，包含 group_id
+    路径参数: user_id - 要修改组的用户ID
+    
+    Args:
+        user_id: 用户ID
+    Returns:
+        JSON: 修改结果
+    """
     user = User.query.get_or_404(user_id)
     data = request.get_json() or {}
     result = update_user_group(user, data.get('group_id'))

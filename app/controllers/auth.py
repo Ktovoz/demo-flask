@@ -7,11 +7,16 @@ from app.services.auth_service import authenticate_user, register_user
 from app.utils.request_logger import log_user_action
 
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    """用户登录路由
+    
+    GET请求: 显示登录表单页面
+    POST请求: 处理登录表单提交
+    """
     if current_user.is_authenticated:
         logger.debug('已登录用户 %s 访问登录页，重定向至首页', current_user.username)
         log_user_action("访问登录页（已登录）", user=current_user)
@@ -73,6 +78,11 @@ def login():
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
+    """用户注册路由
+    
+    GET请求: 显示注册表单页面
+    POST请求: 处理注册表单提交
+    """
     if current_user.is_authenticated:
         logger.debug('已登录用户 %s 访问注册页，重定向至首页', current_user.username)
         log_user_action("访问注册页（已登录）", user=current_user)
@@ -123,6 +133,10 @@ def register():
 @auth_bp.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
+    """用户退出登录路由
+    
+    仅允许已登录用户访问，处理用户退出登录逻辑
+    """
     logger.info('用户 %s 退出系统', current_user.username)
     # 记录退出系统行为
     log_user_action("退出系统", user=current_user)

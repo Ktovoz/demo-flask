@@ -10,18 +10,41 @@ from app.models.user import User
 
 @dataclass
 class ServiceResponse:
+    """服务层响应数据类
+    
+    Attributes:
+        success: 操作是否成功
+        message: 响应消息
+        data: 响应数据（可选）
+    """
     success: bool
     message: str
     data: Optional[Any] = None
 
 
 def _load_group(group_id: Optional[int]) -> Optional[Group]:
+    """根据ID加载用户组
+    
+    Args:
+        group_id: 用户组ID
+        
+    Returns:
+        Group: 用户组对象，如果未找到则返回None
+    """
     if not group_id:
         return None
     return Group.query.get(group_id)
 
 
 def _normalise_group_id(value: Optional[Any]) -> Optional[int]:
+    """规范化用户组ID值
+    
+    Args:
+        value: 待处理的值
+        
+    Returns:
+        int: 规范化后的用户组ID，如果无效则返回None
+    """
     if value in (None, '', 'null'):
         return None
     try:
@@ -31,6 +54,15 @@ def _normalise_group_id(value: Optional[Any]) -> Optional[int]:
 
 
 def _to_bool(value: Any, default: bool = True) -> bool:
+    """将值转换为布尔类型
+    
+    Args:
+        value: 待转换的值
+        default: 默认值
+        
+    Returns:
+        bool: 转换后的布尔值
+    """
     if isinstance(value, bool):
         return value
     if value is None:
@@ -39,6 +71,14 @@ def _to_bool(value: Any, default: bool = True) -> bool:
 
 
 def create_user(payload: Dict[str, Any]) -> ServiceResponse:
+    """创建新用户
+    
+    Args:
+        payload: 包含用户信息的字典
+        
+    Returns:
+        ServiceResponse: 服务响应对象
+    """
     username = (payload.get('username') or '').strip()
     if not username:
         return ServiceResponse(False, '用户名不能为空')
@@ -70,6 +110,15 @@ def create_user(payload: Dict[str, Any]) -> ServiceResponse:
 
 
 def update_user(user: User, payload: Dict[str, Any]) -> ServiceResponse:
+    """更新用户信息
+    
+    Args:
+        user: 要更新的用户对象
+        payload: 包含更新信息的字典
+        
+    Returns:
+        ServiceResponse: 服务响应对象
+    """
     username = payload.get('username')
     if username and username != user.username:
         if User.query.filter_by(username=username).first():
@@ -101,6 +150,14 @@ def update_user(user: User, payload: Dict[str, Any]) -> ServiceResponse:
 
 
 def delete_user(user: User) -> ServiceResponse:
+    """删除用户
+    
+    Args:
+        user: 要删除的用户对象
+        
+    Returns:
+        ServiceResponse: 服务响应对象
+    """
     username = user.username
     try:
         db.session.delete(user)
@@ -115,6 +172,15 @@ def delete_user(user: User) -> ServiceResponse:
 
 
 def change_password(user: User, new_password: str) -> ServiceResponse:
+    """修改用户密码
+    
+    Args:
+        user: 要修改密码的用户对象
+        new_password: 新密码
+        
+    Returns:
+        ServiceResponse: 服务响应对象
+    """
     user.password = new_password
     try:
         db.session.commit()
@@ -128,6 +194,15 @@ def change_password(user: User, new_password: str) -> ServiceResponse:
 
 
 def update_user_group(user: User, group_id: Optional[Any]) -> ServiceResponse:
+    """更新用户组
+    
+    Args:
+        user: 要更新的用户对象
+        group_id: 新的用户组ID
+        
+    Returns:
+        ServiceResponse: 服务响应对象
+    """
     group = _load_group(_normalise_group_id(group_id))
     user.group = group
     try:

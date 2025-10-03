@@ -1,21 +1,65 @@
-﻿<div class="user-info mb-4 p-3 bg-light rounded border">
-    <div class="d-flex align-items-center justify-content-between">
-        <div>
-            <h6 class="mb-1">{{ user.username|default("未登录") }}</h6>
-            <small class="text-muted">{{ user.group_name|default("无用户组") }}</small>
+<div class="sidebar-user card bg-transparent border-0 text-white">
+    <div class="card-body p-0 d-flex flex-column gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="sidebar-avatar d-flex align-items-center justify-content-center">
+                <span class="fw-semibold">{{ user.username[0]|upper }}</span>
+            </div>
+            <div>
+                <div class="fw-semibold">{{ user.username|default("未登录") }}</div>
+                <div class="text-white-50 small">{{ user.group_name|default("无用户组") }}</div>
+            </div>
         </div>
         <form method="post" action="{{ url_for('auth.logout') }}" class="m-0">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-outline-danger btn-sm">退出</button>
+            <button type="submit" class="btn btn-outline-light btn-sm w-100">
+                <i class="bi bi-box-arrow-right me-1"></i>退出登录
+            </button>
         </form>
     </div>
 </div>
 
-<nav class="list-group" id="sidebarNav">
-    <button type="button" class="list-group-item list-group-item-action active" data-view="users">
-        用户列表
+<nav class="sidebar-nav d-flex flex-column gap-2" id="sidebarNav">
+    <button type="button" class="sidebar-link active" data-view="users">
+        <i class="bi bi-people-fill"></i>
+        <span>用户列表</span>
     </button>
-    <button type="button" class="list-group-item list-group-item-action" data-view="groups">
-        用户组管理
+    <button type="button" class="sidebar-link" data-view="groups">
+        <i class="bi bi-collection"></i>
+        <span>用户组管理</span>
     </button>
 </nav>
+
+<style>
+.sidebar-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.16);
+    font-size: 1.1rem;
+}
+
+.sidebar-nav .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.72);
+    font-weight: 500;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.sidebar-nav .sidebar-link i {
+    font-size: 1.2rem;
+}
+
+.sidebar-nav .sidebar-link.active,
+.sidebar-nav .sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    transform: translateX(4px);
+}
+</style>

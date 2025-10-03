@@ -1,15 +1,75 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}用户管理系统{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     {% block head_extras %}{% endblock %}
     <style>
+        :root {
+            --brand-primary: #4f46e5;
+            --brand-secondary: #7c3aed;
+            --brand-accent: #22d3ee;
+            --body-bg: #f5f7fb;
+            --sidebar-bg: linear-gradient(180deg, #1f2a40 0%, #1a1f3c 100%);
+            --surface-bg: #ffffff;
+            --border-color: rgba(15, 23, 42, 0.08);
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --success: #16a34a;
+            --danger: #ef4444;
+        }
+
         body {
             min-height: 100vh;
+            background: var(--body-bg);
+            color: var(--text-primary);
+            font-family: 'Inter', 'Noto Sans SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a {
+            color: var(--brand-primary);
+        }
+
+        a:hover {
+            color: var(--brand-secondary);
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-brand {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+            border: none;
+            color: #fff;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn-brand:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 24px rgba(79, 70, 229, 0.25);
+        }
+
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+        }
+
+        .badge-soft {
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--brand-primary);
+            border-radius: 999px;
+            font-weight: 500;
         }
     </style>
     {% block styles %}{% endblock %}

@@ -13,6 +13,12 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route('/')
 @login_required
 def index():
+    """首页路由，显示用户和用户组列表
+    
+    需要用户登录才能访问
+    Returns:
+        HTML: 渲染后的首页模板
+    """
     users = User.query.all()
     groups = Group.query.all()
     users_data = [user.to_dict() for user in users]

@@ -9,6 +9,14 @@ from app.utils.request_logger import log_request_info
 
 
 def create_app(config_name: str = 'default') -> Flask:
+    """创建并配置 Flask 应用实例
+    
+    Args:
+        config_name: 配置环境名称，默认为 'default'
+        
+    Returns:
+        Flask: 配置完成的 Flask 应用实例
+    """
     app = Flask(__name__)
     app.config.from_object(config[config_name])
 
@@ -28,6 +36,11 @@ def create_app(config_name: str = 'default') -> Flask:
 
 
 def register_extensions(app: Flask) -> None:
+    """注册 Flask 扩展
+    
+    Args:
+        app: Flask 应用实例
+    """
     app.config['CORS_HEADERS'] = 'Content-Type'
 
     db.init_app(app)
@@ -41,6 +54,11 @@ def register_extensions(app: Flask) -> None:
 
 
 def register_blueprints(app: Flask) -> None:
+    """注册蓝图路由
+    
+    Args:
+        app: Flask 应用实例
+    """
     from .controllers.auth import auth_bp
     from .controllers.group import group_bp
     from .controllers.main import main_bp
@@ -53,12 +71,22 @@ def register_blueprints(app: Flask) -> None:
 
 
 def register_cli(app: Flask) -> None:
+    """注册命令行接口命令
+    
+    Args:
+        app: Flask 应用实例
+    """
     from .commands import init_db_command
 
     app.cli.add_command(init_db_command)
 
 
 def register_error_handlers(app: Flask) -> None:
+    """注册错误处理函数
+    
+    Args:
+        app: Flask 应用实例
+    """
     @app.errorhandler(403)
     def forbidden(error):
         return render_template('errors/403.html'), 403
@@ -75,6 +103,11 @@ def register_error_handlers(app: Flask) -> None:
 
 
 def register_request_hooks(app: Flask) -> None:
+    """注册请求钩子函数
+    
+    Args:
+        app: Flask 应用实例
+    """
     @app.before_request
     def before_request():
         log_request_info()
